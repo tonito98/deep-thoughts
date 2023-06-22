@@ -4,33 +4,30 @@ import { ADD_THOUGHT } from '../../utils/mutations';
 import { QUERY_THOUGHTS, QUERY_ME } from '../../utils/queries';
 
 const ThoughtForm = () => {
+    const [thoughtText, setText] = useState('');
+    const [characterCount, setCharacterCount] = useState(0);
     const [addThought, {error}] =useMutation(ADD_THOUGHT, {
         update(cache, { data: { addThought } }) {
-          try {
-            //could potentially not exist yet, so wrap in a try...catch
-            
-            // read what's currently in the cache
-            const { thoughts } = cache.readQuery({ query: QUERY_THOUGHTS });
-            
-            //prepend the newest thought to the front of the array
-            cache.writeQuery({
-                query: QUERY_THOUGHTS,
-                data: { thoughts: [addThought, ...thoughts]}
-            });
-        } catch (e) {
-            console.error(e);
-        }
-
-        // update me object's cache, appending new thought to the end of the array
+           // could potentially not exist yet, so wrap in a try/catch
+      try {
+        // update me array's cache
         const { me } = cache.readQuery({ query: QUERY_ME });
         cache.writeQuery({
-            query: QUERY_ME,
-            data: { me: {...me, thoughts: [...me.thoughts, addThought]}}
+          query: QUERY_ME,
+          data: { me: { ...me, thoughts: [...me.thoughts, addThought] } },
         });
+      } catch (e) {
+        console.warn("First thought insertion by user!")
       }
-    });
-    const [thoughtText, setText] = useState('');
-    const [characterCount, setCharacterCount] =useState(0);
+
+      // update thought array's cache
+      const { thoughts } = cache.readQuery({ query: QUERY_THOUGHTS });
+      cache.writeQuery({
+        query: QUERY_THOUGHTS,
+        data: { thoughts: [addThought, ...thoughts] },
+      });
+    }
+  });
     const handleChange = event => {
         if (event.target.value.length <= 280) {
             setText(event.target.value);
